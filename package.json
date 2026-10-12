@@ -1,0 +1,53 @@
+{
+  "name": "@aut2fa/node",
+  "version": "0.1.0",
+  "description": "Cliente Node.js para enviar, consultar e verificar códigos pela API aut2fa.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
+  },
+  "types": "./src/index.d.ts",
+  "files": [
+    "src",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/index.js",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2022 type-tests/consumer.mts",
+    "prepack": "npm run check",
+    "prepublishOnly": "npm run check && npm run typecheck && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jhowbhz/aut2fa-node.git"
+  },
+  "homepage": "https://aut2fa.com",
+  "bugs": {
+    "url": "https://github.com/jhowbhz/aut2fa-node/issues"
+  },
+  "keywords": [
+    "aut2fa",
+    "2fa",
+    "otp",
+    "whatsapp"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
