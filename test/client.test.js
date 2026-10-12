@@ -190,3 +190,42 @@ test("invalid IDs and idempotency headers cannot change the HTTP route or header
   await assert.rejects(client.verify("snd_123", { code: 123456 }), TypeError);
   assert.equal(requests, 0);
 });
+
+for (const baseUrl of ["https://example.com?", "https://example.com#"]) {
+  test(`an empty URL delimiter cannot replace the API route: ${baseUrl}`, () => {
+    assert.throws(() => new Aut2fa("ak_test_fixture", { baseUrl }), TypeError);
+  });
+}
+
+test("an unrecognized JSON error envelope cannot expose upstream details", async (t) => {
+  const baseUrl = await server(t, (request, response) => {
+    json(response, 502, { code: 123, detail: "private upstream information", errors: { to: "private recipient information" } });
+  });
+  await assert.rejects(new Aut2fa("ak_test_fixture", { baseUrl }).send({ to: "+5531999999999" }), (error) => {
+    assert.equal(error.code, "http_error");
+    assert.equal(error.detail, "HTTP 502");
+    assert.deepEqual(error.errors, {});
+    assert.doesNotMatch(error.message, /private/);
+    return true;
+  });
+});
+
+for (const [idempotencyKey, expectedBytes] of [["é", [0xc3, 0xa9]], ["✓", [0xe2, 0x9c, 0x93]]]) {
+  test(`a Unicode idempotency key uses its original UTF-8 bytes: ${idempotencyKey}`, async (t) => {
+    let headerBytes;
+    const baseUrl = await server(t, (request, response) => {
+      headerBytes = [...Buffer.from(request.headers["idempotency-key"], "latin1")];
+      json(response, 202, SEND);
+    });
+    await new Aut2fa("ak_test_fixture", { baseUrl }).send({ to: "+5531999999999" }, { idempotencyKey });
+    assert.deepEqual(headerBytes, expectedBytes);
+  });
+}
+
+test("a problem without optional detail preserves its API code", async (t) => {
+  const baseUrl = await server(t, (request, response) => {
+    response.setHeader("Retry-After", "8");
+    json(response, 429, { code: "rate_limited", status: 429 });
+  });
+  await assert.rejects(new Aut2fa("ak_test_fixture", { baseUrl }).send({ to: "+5531999999999" }), (error) => error.code === "rate_limited" && error.retryAfter === "8");
+});

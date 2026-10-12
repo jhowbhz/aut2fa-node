@@ -1,10 +1,22 @@
+import { Buffer } from "node:buffer";
+
 const DEFAULT_BASE_URL = "https://api.aut2fa.com";
 const DEFAULT_TIMEOUT_MS = 10_000;
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/u;
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/u;
 const SEND_ID = /^[A-Za-z0-9_-]+$/u;
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function headerValue(value) {
+  // fetch accepts Latin-1 byte strings; the API expects UTF-8 header bytes.
+  return Buffer.from(value, "utf8").toString("latin1");
+}
+
+function isProblem(value) {
+  return isObject(value) && typeof value.code === "string" && value.code.trim() !== ""
+    && (value.detail === undefined || typeof value.detail === "string");
 }
 
 function requireString(value, name) {
@@ -69,7 +81,8 @@ export class Aut2fa {
     } catch {
       throw new TypeError("baseUrl must be an absolute HTTP or HTTPS URL");
     }
-    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash || CONTROL_CHARACTERS.test(baseUrl)) {
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password
+      || baseUrl.includes("?") || baseUrl.includes("#") || CONTROL_CHARACTERS.test(baseUrl)) {
       throw new TypeError("baseUrl must be HTTP or HTTPS without credentials, query or fragment");
     }
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 2_147_483_647) {
@@ -96,7 +109,7 @@ export class Aut2fa {
         || new TextEncoder().encode(idempotencyKey).length > 255) {
         throw new TypeError("idempotencyKey must be a string of at most 255 bytes without control characters");
       }
-      headers["Idempotency-Key"] = idempotencyKey;
+      headers["Idempotency-Key"] = headerValue(idempotencyKey);
     }
     return this.#request("POST", "/v1/send", body, headers, isSend);
   }
@@ -114,7 +127,7 @@ export class Aut2fa {
   }
 
   async #request(method, path, body, additionalHeaders, validate) {
-    const headers = { Authorization: `Bearer ${this.#apiKey}`, Accept: "application/json", ...additionalHeaders };
+    const headers = { Authorization: headerValue(`Bearer ${this.#apiKey}`), Accept: "application/json", ...additionalHeaders };
     if (body !== undefined) headers["Content-Type"] = "application/json";
     const response = await fetch(`${this.#baseUrl}${path}`, {
       method, headers, body: body === undefined ? undefined : JSON.stringify(body),
@@ -129,7 +142,7 @@ export class Aut2fa {
       payload = null;
     }
     if (!response.ok) {
-      throw new ApiError(response.status, isObject(payload) ? payload : {}, response.headers.get("Retry-After"));
+      throw new ApiError(response.status, isProblem(payload) ? payload : {}, response.headers.get("Retry-After"));
     }
     if (!isObject(payload) || !validate(payload)) throw new InvalidResponseError(response.status);
     return payload;
