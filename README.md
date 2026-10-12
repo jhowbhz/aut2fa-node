@@ -1,16 +1,18 @@
 # aut2fa-node
 
+[![npm](https://img.shields.io/npm/v/@aut2fa/node)](https://www.npmjs.com/package/@aut2fa/node)
+
 Cliente Node.js para enviar, consultar e verificar códigos 2FA pela API aut2fa. Requer Node.js 20 ou superior, inclui tipos TypeScript e usa o `fetch` nativo, sem dependências de execução.
 
-## Instalar pelo GitHub
+## Instalar
 
-A versão `0.1.0` é distribuída pelo repositório. Instale a tag:
+O pacote está publicado no npm como [`@aut2fa/node`](https://www.npmjs.com/package/@aut2fa/node):
 
 ```sh
-npm install git+https://github.com/jhowbhz/aut2fa-node.git#v0.1.0
+npm install @aut2fa/node
 ```
 
-A publicação como `@aut2fa/node` no npm depende da criação da conta e do acesso ao escopo `@aut2fa`. Depois da publicação, a instalação será `npm install @aut2fa/node`.
+Também funciona com `pnpm add @aut2fa/node` e `yarn add @aut2fa/node`.
 
 ## Enviar, consultar e verificar
 
@@ -74,8 +76,6 @@ try {
 
 Execute `npm ci`, `npm run check`, `npm run typecheck` e `npm test`. Os testes usam servidores HTTP locais e não enviam mensagens. `npm pack` gera o arquivo instalável; `npm publish --dry-run --access public` verifica o pacote sem publicá-lo.
 
-Para a primeira publicação, crie a conta no [npm](https://www.npmjs.com/signup), obtenha acesso ao escopo `@aut2fa`, execute `npm login` e publique com `npm publish --access public`. Faça a autenticação e o segundo fator diretamente no npm.
-
-Depois, configure um [Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) com usuário GitHub `jhowbhz`, repositório `aut2fa-node`, arquivo `publish.yml` e permissão para `npm publish`. O workflow **Publish npm**, acionado manualmente com a tag, confere a versão, executa os testes e publica usando OIDC.
+As versões são publicadas pelo workflow **Publish npm**, acionado manualmente com uma tag existente, como `v0.1.1`. Ele confere a tag contra a versão do `package.json`, executa os testes e publica com [Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) via OIDC, sem token npm salvo no repositório.
 
 Consulte a [documentação da API aut2fa](https://doc.aut2fa.com). Licença [MIT](LICENSE).
