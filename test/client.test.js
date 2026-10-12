@@ -229,3 +229,13 @@ test("a problem without optional detail preserves its API code", async (t) => {
   });
   await assert.rejects(new Aut2fa("ak_test_fixture", { baseUrl }).send({ to: "+5531999999999" }), (error) => error.code === "rate_limited" && error.retryAfter === "8");
 });
+
+test("an empty delivery status is an invalid send response", async (t) => {
+  const baseUrl = await server(t, (request, response) => json(response, 202, { ...SEND, status: "" }));
+  await assert.rejects(new Aut2fa("ak_test_fixture", { baseUrl }).send({ to: "+5531999999999" }), InvalidResponseError);
+});
+
+test("an empty verification state is an invalid verification response", async (t) => {
+  const baseUrl = await server(t, (request, response) => json(response, 200, { valid: true, verification: "", attempts_left: 4 }));
+  await assert.rejects(new Aut2fa("ak_test_fixture", { baseUrl }).verify("snd_123", { code: "000000" }), InvalidResponseError);
+});

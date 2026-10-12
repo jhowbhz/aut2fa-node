@@ -32,11 +32,12 @@ function requireId(id) {
 }
 
 function isSend(value) {
-  return typeof value.id === "string" && value.id !== "" && typeof value.status === "string";
+  return typeof value.id === "string" && value.id !== ""
+    && typeof value.status === "string" && value.status !== "";
 }
 
 function isVerification(value) {
-  return typeof value.valid === "boolean" && typeof value.verification === "string"
+  return typeof value.valid === "boolean" && typeof value.verification === "string" && value.verification !== ""
     && Number.isInteger(value.attempts_left) && value.attempts_left >= 0;
 }
 
